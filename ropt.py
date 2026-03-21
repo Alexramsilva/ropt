@@ -12,7 +12,13 @@ import pulp
 from datetime import datetime
 
 st.set_page_config(page_title="Pedido Óptimo - Mariquería Ramírez", layout="wide")
-st.title("📦 Mariquería Ramírez - Pedido Óptimo con Subtotales por Familia")
+st.title("📦 Mariquería Ramírez - Pedido Óptimo")
+# Imagen local
+st.image(
+    "mr.jpeg",
+    caption="Marisquería Ramírez",
+    use_container_width=False ,width=200
+)
 
 # -------------------------
 # Datos
