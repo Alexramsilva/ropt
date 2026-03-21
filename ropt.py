@@ -12,7 +12,7 @@ import pulp
 from datetime import datetime
 
 st.set_page_config(page_title="Pedido Óptimo - Marisquería Ramírez", layout="wide")
-st.title("📦 Mariquería Ramírez - Pedido Óptimo")
+st.title("📦 Marisquería Ramírez - Pedido Óptimo")
 # Imagen local
 st.image(
     "mr.jpeg",
