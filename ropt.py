@@ -58,72 +58,62 @@ data = [
 ["3B","ARROZ VALLE VERDE","1 KILO",0,1,7,17],
 ]
 
-columns = ["Familia","Producto","Especificación","Inventario","CMVP","Consumo mensual","Costo unitario"]
+columns = ["Familia","Producto","Inventario","CMVP","Consumo mensual","Costo unitario"]
 df = pd.DataFrame(data, columns=columns)
 
 # -------------------------
-# Captura inventario
+# Captura de inventario simplificada
 # -------------------------
-st.subheader("✏️ Captura inventario actual")
-edited_df = st.data_editor(df)
+st.subheader("✏️ Ingresa el inventario actual")
+inventario_usuario = []
+
+for i, row in df.iterrows():
+    inventario = st.number_input(
+        label=f"{row['Familia']} - {row['Producto']}",
+        min_value=0,
+        value=int(row["Inventario"]),
+        step=1
+    )
+    inventario_usuario.append(inventario)
+
+# Guardar inventario ingresado en el DataFrame
+df["Inventario"] = inventario_usuario
+
+st.write("📊 Inventario capturado:")
+st.dataframe(df[["Familia","Producto","Inventario"]])
 
 # -------------------------
-# Optimización
+# Optimización con PuLP
 # -------------------------
 if st.button("🚀 Calcular pedido óptimo"):
-
     model = pulp.LpProblem("Pedido_Optimo", pulp.LpMinimize)
+    k = {i: pulp.LpVariable(f"k_{i}", lowBound=0, cat="Integer") for i in df.index}
 
-    # Variables (lotes enteros)
-    k = {i: pulp.LpVariable(f"k_{i}", lowBound=0, cat="Integer") for i in edited_df.index}
-
-    # Función objetivo (minimizar costo)
-    model += pulp.lpSum(
-        edited_df.loc[i, "Costo unitario"] *
-        edited_df.loc[i, "CMVP"] *
-        k[i]
-        for i in edited_df.index
-    )
+    # Función objetivo: minimizar costo
+    model += pulp.lpSum(df.loc[i,"Costo unitario"] * df.loc[i,"CMVP"] * k[i] for i in df.index)
 
     # Restricciones de demanda
-    for i in edited_df.index:
-        demanda = edited_df.loc[i, "Consumo mensual"]
-        inventario = edited_df.loc[i, "Inventario"]
-        cmvp = edited_df.loc[i, "CMVP"]
-
-        necesidad = max(0, demanda - inventario)
-        model += cmvp * k[i] >= necesidad
+    for i in df.index:
+        necesidad = max(0, df.loc[i,"Consumo mensual"] - df.loc[i,"Inventario"])
+        model += df.loc[i,"CMVP"] * k[i] >= necesidad
 
     # Resolver
     model.solve()
 
-    # -------------------------
     # Resultados
-    # -------------------------
-    result = edited_df.copy()
+    df["Lotes"] = [pulp.value(k[i]) for i in df.index]
+    df["Pedido óptimo"] = df["Lotes"] * df["CMVP"]
+    df["Costo pedido"] = df["Pedido óptimo"] * df["Costo unitario"]
 
-    result["Lotes"] = [pulp.value(k[i]) for i in edited_df.index]
-    result["Pedido óptimo"] = result["Lotes"] * result["CMVP"]
-    result["Costo pedido"] = result["Pedido óptimo"] * result["Costo unitario"]
+    st.subheader("📊 Pedido Óptimo")
+    st.dataframe(df[["Familia","Producto","Inventario","Lotes","Pedido óptimo","Costo pedido"]])
 
-    st.subheader("📊 Resultado")
-    st.dataframe(result)
-
-    # Total
-    st.subheader("💰 Total a pagar")
-    total = result["Costo pedido"].sum()
-    st.metric("Costo total del pedido", f"${total:,.2f}")
-
-    # -------------------------
     # Descargar CSV
-    # -------------------------
     timestamp = datetime.now().strftime("%Y%m%d_%H%M")
-
-    csv = result.to_csv(index=False).encode("utf-8")
-
+    csv = df.to_csv(index=False).encode("utf-8")
     st.download_button(
         "📥 Descargar CSV completo",
         csv,
-        f"pedido_optimo_{timestamp}.csv",
-        "text/csv"
+        file_name=f"pedido_optimo_{timestamp}.csv",
+        mime="text/csv"
     )
