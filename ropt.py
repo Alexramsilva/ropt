@@ -12,7 +12,7 @@ import pulp
 from datetime import datetime
 
 st.set_page_config(page_title="Pedido Óptimo - Mariquería Ramírez", layout="wide")
-st.title("📦 Mariquería Ramírez - Captura de Inventario Simplificada")
+st.title("📦 Mariquería Ramírez - Pedido Óptimo con Subtotales por Familia")
 
 # -------------------------
 # Datos
@@ -21,7 +21,7 @@ data = [
 ["MARISCOS","Camarón Seco","250 Gramos",0,1,1,70],
 ["SAMS","CLORO","10 LITROS",0,1,1,119],
 ["SAMS","FABULOSO (LAVANDA)","10 LITROS",0,1,1,179],
-["SAMS","ACEITE 1-2-3","PAQUETE 3 LITROS",0,3,24,42],
+["SAMS","ACEITE 1-2-3","PAQUETE 3 LITROS",0,3,24,127],
 ["SAMS","VALENTINA ROJA","350 ML (6 PZAS)",0,6,6,91],
 ["MATERIA PRIMA","CHAROLA 835","FILETES",0,1,1,35],
 ["MATERIA PRIMA","CHAROLA 855","PEDIDOS GRANDES",0,1,1,35],
@@ -49,8 +49,8 @@ data = [
 ["SAN JUAN","CHILE PUYA","GRAMAJE",0,1,1,20],
 ["SAN JUAN","CHILE GUAJIYO","GRAMAJE",0,1,1,20],
 ["3B","HARINA 3 SOLES","1 KILO",0,1,12,16],
-["3B","MAYONESA","CHICA",0,1,3,30],
-["3B","MAYONESA","MEDIANA",0,1,3,49],
+["3B","MAYONESA CHICA","CHICA",0,1,3,30],
+["3B","MAYONESA MEDIANA","MEDIANA",0,1,3,49],
 ["3B","SERVILLETA_SERVICIO","PAQUETE",0,1,2,42],
 ["3B","CATSUP","1 LITRO",0,1,3,30],
 ["3B","GEL ANTIBACTERIAL","200 ML",0,1,1,20],
@@ -61,7 +61,7 @@ columns = ["Familia","Producto","Especificación","Inventario","CMVP","Consumo m
 df = pd.DataFrame(data, columns=columns)
 
 # -------------------------
-# Captura de inventario simplificada con key único
+# Captura de inventario
 # -------------------------
 st.subheader("✏️ Ingresa el inventario actual")
 inventario_usuario = []
@@ -72,12 +72,11 @@ for i, row in df.iterrows():
         min_value=0,
         value=int(row["Inventario"]),
         step=1,
-        key=f"inventario_{i}"  # <- clave única
+        key=f"inventario_{i}"
     )
     inventario_usuario.append(inventario)
 
 df["Inventario"] = inventario_usuario
-
 st.write("📊 Inventario capturado:")
 st.dataframe(df[["Familia","Producto","Inventario"]])
 
@@ -107,17 +106,35 @@ if st.button("🚀 Calcular pedido óptimo"):
     st.subheader("📊 Pedido Óptimo")
     st.dataframe(df[["Familia","Producto","Inventario","Lotes","Pedido óptimo","Costo pedido"]])
 
-    # Total
-    st.subheader("💰 Total del pedido")
-    total = df["Costo pedido"].sum()
-    st.metric("Costo total", f"${total:,.2f}")
+    # -------------------------
+    # Subtotal por Familia
+    # -------------------------
+    subtotal_familia = df.groupby("Familia")["Costo pedido"].sum().reset_index()
+    subtotal_familia.rename(columns={"Costo pedido":"Subtotal"}, inplace=True)
+    st.subheader("💰 Subtotal por Familia")
+    st.dataframe(subtotal_familia)
 
-    # Descargar CSV
+    # Total general
+    total = df["Costo pedido"].sum()
+    st.subheader("💵 Total general del pedido")
+    st.metric("Total", f"${total:,.2f}")
+
+    # -------------------------
+    # Descargar CSV completo
+    # -------------------------
     timestamp = datetime.now().strftime("%Y%m%d_%H%M")
-    csv = df.to_csv(index=False).encode("utf-8")
+    # Unir detalle y subtotales en un solo CSV
+    csv_detalle = df[["Familia","Producto","Inventario","Lotes","Pedido óptimo","Costo pedido"]]
+    # Creamos un separador para que quede visualmente
+    csv_total = pd.concat([csv_detalle, pd.DataFrame([["", "", "", "", "",""]], columns=csv_detalle.columns),
+                           pd.DataFrame([["SUBTOTAL " + row["Familia"], "", "", "", "", row["Subtotal"]] for _, row in subtotal_familia.iterrows()],
+                                        columns=csv_detalle.columns)],
+                          ignore_index=True)
+    csv_data = csv_total.to_csv(index=False).encode("utf-8")
+
     st.download_button(
-        "📥 Descargar CSV completo",
-        csv,
+        "📥 Descargar CSV completo con subtotales",
+        csv_data,
         file_name=f"pedido_optimo_{timestamp}.csv",
         mime="text/csv"
     )
