@@ -16,7 +16,7 @@ st.title("📦 Mariquería Ramírez - Pedido Óptimo")
 # Imagen local
 st.image(
     "mr.jpeg",
-    caption="Marisquería Ramírez",
+    caption="",
     use_container_width=False ,width=200
 )
 
