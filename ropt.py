@@ -61,7 +61,7 @@ columns = ["Familia","Producto","Especificación","Inventario","CMVP","Consumo m
 df = pd.DataFrame(data, columns=columns)
 
 # -------------------------
-# Captura de inventario simplificada
+# Captura de inventario simplificada con key único
 # -------------------------
 st.subheader("✏️ Ingresa el inventario actual")
 inventario_usuario = []
@@ -71,7 +71,8 @@ for i, row in df.iterrows():
         label=f"{row['Familia']} - {row['Producto']}",
         min_value=0,
         value=int(row["Inventario"]),
-        step=1
+        step=1,
+        key=f"inventario_{i}"  # <- clave única
     )
     inventario_usuario.append(inventario)
 
