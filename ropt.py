@@ -11,9 +11,8 @@ import pandas as pd
 import pulp
 from datetime import datetime
 
-st.set_page_config(page_title="Pedido Óptimo", layout="wide")
-
-st.title("📦 Mariquería Ramírez - Pedido Óptimo")
+st.set_page_config(page_title="Pedido Óptimo - Mariquería Ramírez", layout="wide")
+st.title("📦 Mariquería Ramírez - Captura de Inventario Simplificada")
 
 # -------------------------
 # Datos
@@ -58,7 +57,7 @@ data = [
 ["3B","ARROZ VALLE VERDE","1 KILO",0,1,7,17],
 ]
 
-columns = ["Familia","Producto","Inventario","CMVP","Consumo mensual","Costo unitario"]
+columns = ["Familia","Producto","Especificación","Inventario","CMVP","Consumo mensual","Costo unitario"]
 df = pd.DataFrame(data, columns=columns)
 
 # -------------------------
@@ -76,7 +75,6 @@ for i, row in df.iterrows():
     )
     inventario_usuario.append(inventario)
 
-# Guardar inventario ingresado en el DataFrame
 df["Inventario"] = inventario_usuario
 
 st.write("📊 Inventario capturado:")
@@ -107,6 +105,11 @@ if st.button("🚀 Calcular pedido óptimo"):
 
     st.subheader("📊 Pedido Óptimo")
     st.dataframe(df[["Familia","Producto","Inventario","Lotes","Pedido óptimo","Costo pedido"]])
+
+    # Total
+    st.subheader("💰 Total del pedido")
+    total = df["Costo pedido"].sum()
+    st.metric("Costo total", f"${total:,.2f}")
 
     # Descargar CSV
     timestamp = datetime.now().strftime("%Y%m%d_%H%M")
