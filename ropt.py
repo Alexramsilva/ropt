@@ -121,7 +121,7 @@ if st.button("🚀 Calcular pedido óptimo"):
 
     model.solve()
 
-    df["Lotes"] = [pulp.value(k[i]) for i in df.index]
+    df["Pide"] = [pulp.value(k[i]) for i in df.index]
     df["Pedido óptimo"] = df["Lotes"] * df["CMVP"]
     df["Costo pedido"] = df["Pedido óptimo"] * df["Costo unitario"]
 
