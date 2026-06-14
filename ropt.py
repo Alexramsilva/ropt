@@ -126,7 +126,7 @@ if st.button("🚀 Calcular pedido óptimo"):
     df["Costo pedido"] = df["Pedido óptimo"] * df["Costo unitario"]
 
     st.subheader("📊 Pedido Óptimo")
-    st.dataframe(df[["Familia","Producto","Inventario","Lotes","Pedido óptimo","Costo pedido"]])
+    st.dataframe(df[["Familia","Producto","Lotes","Inventario","Pedido óptimo","Costo pedido"]])
 
     subtotal_familia = df.groupby("Familia")["Costo pedido"].sum().reset_index()
     subtotal_familia.rename(columns={"Costo pedido":"Subtotal"}, inplace=True)
@@ -140,7 +140,7 @@ if st.button("🚀 Calcular pedido óptimo"):
 
     timestamp = datetime.now().strftime("%Y%m%d_%H%M")
 
-    csv_detalle = df[["Familia","Producto","Inventario","Lotes","Pedido óptimo","Costo pedido"]]
+    csv_detalle = df[["Familia","Producto","Lotes","Inventario","Pedido óptimo","Costo pedido"]]
 
     csv_total = pd.concat(
         [
